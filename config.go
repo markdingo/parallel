@@ -26,7 +26,7 @@ type config struct {
 	limitMemory  uint64    // Maximum bytes buffered before stalling a background runner
 	limitRunners uint      // Maximum concurrent runners allowed to run
 	orderRunners bool      // All output is written in runner creation order
-	orderStderr  bool      // For each runner, all stdout preceeds all stderr
+	orderStderr  bool      // For each runner, all stdout precedes all stderr
 	passthru     bool      // Debug option: output is written as soon as it's seen
 }
 
@@ -89,7 +89,7 @@ func (o option) apply(cfg *config) error {
 // might be a good setting. Conversely, if the RunFuncs are CPU-intensive, setting
 // LimitActiveRunners to some proportion of [runtime.NumCPU] is likely a good strategy.
 //
-// LimitActiveRunners is intimitely connected to [LimitMemoryPerRunner] in that the two
+// LimitActiveRunners is intimately connected to [LimitMemoryPerRunner] in that the two
 // combine to define the maximum memory resources any Group consumes while buffering
 // output.
 func LimitActiveRunners(maxActive uint) Option {
@@ -148,7 +148,7 @@ func OrderRunners(setting bool) Option {
 }
 
 // OrderStderr causes all stderr output to be written *after* all stdout output for each
-// [RunFunc]. This can result in an ouput stream which differs from one written by a
+// [RunFunc]. This can result in an output stream which differs from one written by a
 // [RunFunc] run serially and writing directly to os.Stdout and os.Stderr. This option
 // exists to mimic the GNU parallel “--group” option.
 //
