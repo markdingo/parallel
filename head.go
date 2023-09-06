@@ -1,8 +1,8 @@
 package parallel
 
-// head provides a stable, lifetime io.Writer interface for RunFunc for both stdout and
-// stderr and it provides the Write() pathway thru Pipeline via the commonWriter.out
-// io.Writer.
+// head provides a stable, lifetime io.Writer interface for RunFunc - one for each of
+// stdout and stderr. It adapts the io.Writer interface of the application to the
+// writer interface of “parallel”.
 type head struct {
 	commonWriter
 }
