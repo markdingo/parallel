@@ -7,7 +7,7 @@ import (
 // A "pipeline" as it is referred to in this package, consists of a list of writers. A
 // call to writer.Write() passes down the pipeline from writer to writer until it exits
 // back into the Group io.Writers. Write() calls are not necessarily synchronous however
-// as writers such as ``queue'' can buffer output for later processing.
+// as writers such as “queue” can buffer output for later processing.
 type writer interface {
 	// These are implemented by commonWriter
 	io.Writer
