@@ -1,5 +1,5 @@
 <!-- Always newline after period so diffs are easier to read. -->
-# parallel - substantially reduce latency for `go` command-line programs
+# Substantially reduce latency for `go` command-line programs
 
 ## Introduction
 
