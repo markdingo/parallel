@@ -5,10 +5,10 @@ import (
 	"sync"
 )
 
-// tail provides a transition from a writer to an io.Writer which normally interfaces to
-// Group.stdout and Group.stderr which in turn is normally os.Stdout and os.Stderr. Tail
-// always represents the last writer in a pipeline which means it never has a "next" so
-// getting, setting and closing are all no-ops.
+// tail adapts our writer interface to an io.Writer interface which normally points to
+// Group.stdout and Group.stderr which in turn normally points to os.Stdout and
+// os.Stderr. Tail always represents the last writer in a pipeline which means it never
+// has a "next" writer so getting, setting and closing functions are all no-ops.
 //
 // Most importantly, tail protects the Group output writers from concurrent access by all
 // runners within the Group.

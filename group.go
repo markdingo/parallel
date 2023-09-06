@@ -34,8 +34,8 @@ func (gs groupState) String() string {
 }
 
 // Group manages a set of RunFuncs which are ultimately run in parallel by [Group.Run] and
-// waited on by [Group.Wait]. A Group must be constructed with [NewGroup] otherwise panics
-// will occur.
+// waited on by [Group.Wait]. A Group must be constructed with [NewGroup] otherwise a
+// panic will occur when used.
 //
 // Group has a strict calling sequence: Multiple [Group.Add] calls followed by [Group.Run]
 // followed by [Group.Wait] after which no calls to the Group are valid. Any deviation
@@ -68,7 +68,7 @@ type Group struct {
 // io.Writers (which in turn are normally [os.Stdout] and [os.Stderr]).
 //
 // NewGroup copies [os.Stdout] and [os.Stderr] to [Group] [io.Writers] for the purposes of
-// writing the serialises output thus any subseqent changes to [os.Stdout] and [os.Stderr]
+// writing the serialised output thus any subseqent changes to [os.Stdout] and [os.Stderr]
 // have no impact on Group output.
 //
 // If an option is invalid or would result in a nonsensical Group an error is
@@ -118,7 +118,7 @@ func NewGroup(opts ...Option) (*Group, error) {
 //
 // Typically a RunFunc is constructed as a closure to allow additional parameters to be
 // passed to the desired function. This example shows a closure passing in a context and
-// the unique command-line argument to each RunFunc.
+// the individual command-line argument to each RunFunc.
 //
 //	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 //	defer cancel()
@@ -154,12 +154,11 @@ type RunFunc func(stdout, stderr io.Writer)
 
 // Add appends the supplied RunFunc to the Group in anticipation of [Group.Run]. Typically
 // a [RunFunc] is implemented as either a closure or a struct function so as to pass
-// additional parameters to the underlying application function. See [RunFunc] for
-// details.
+// additional parameters to the underlying function. See [RunFunc] for details.
 //
 // Order of adding is important when the [OrderRunners] [Option] is set true as the
-// “front” RunFunc pipeline is arranged such that output typically goes directly to
-// [os.Stdout] and [os.Stderr] which helps give the appearance of liveliness.
+// current “front” RunFunc pipeline is arranged such that output typically goes directly
+// to [os.Stdout] and [os.Stderr] which helps give the appearance of “liveliness”.
 //
 // The outTag and errTag strings are prepended to all output written by the RunFunc to
 // stdout and stderr respectively and help mimic the “--tag” option in GNU parallel.
@@ -172,13 +171,13 @@ func (grp *Group) Add(outTag, errTag string, rFunc RunFunc) {
 // Run starts each previously added [RunFunc] in a separate go routine and transitions the
 // Group to being ready for a [Group.Wait] call.
 //
-// Where possible, as each RunFunc pipeline percolates to the front of all “active”
-// RunFuncs, it is set in foreground mode so that the output is potentially written
-// directly to [os.Stdout] and [os.Stderr] thus affording “liveliness” output to the user.
+// When a RunFunc pipeline percolates to the front of all “active” RunFuncs, it is set to
+// foreground mode so that the output is potentially written directly to [os.Stdout] and
+// [os.Stderr] thus affording “liveliness” output to the user.
 //
 // Run constrains the number of “active” RunFuncs to the [LimitActiveRunners] [Option]
 // setting. If no limit is set, all RunFuncs are started immediately. A RunFunc is
-// considered “active” until it returns, not when the output is sent to the Group
+// considered “active” only up until it returns, not when the output is sent to the Group
 // io.Writers.
 //
 // Regardless of any [LimitActiveRunners] constraints, Run returns to the caller

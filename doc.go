@@ -74,6 +74,8 @@ The main change you have to make is to ensure that your [RunFunc] *always* uses 
 io.Writers designated as stdout and stderr as *all* output must be written to these
 io.Writers, never to os.Stdout or os.Stderr directly.
 
+Further examples of how to use “parallel” can be found in the _examples sub-directory.
+
 # Capturing references to os.Stdout and os.Stderr
 
 If your code-base is large or complicated it may not be easy to find every relevant

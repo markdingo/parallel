@@ -53,13 +53,13 @@ func (qs queueState) String() string {
 	return "??queueState"
 }
 
-// queue is the writer at the core of the parallel package. It decides whether a Write()
+// queue is the writer at the core of the “parallel” package. It decides whether a Write()
 // call is written directly downstream because the runner is in foreground mode or queued
 // because the runner is in background mode. It also decides whether the caller is blocked
 // or gets control back immediately based on [LimitMemoryPerRunner].
 //
 // The constructor returns two writers - one for stdout and one for stderr, both of which
-// share the queue.
+// share the same queue.
 //
 // queue has the following states:
 //
@@ -72,8 +72,8 @@ func (qs queueState) String() string {
 //
 // Apart from Write() calls, an independent goroutine (from [Wait]) calls foreground() to
 // switch to foreground mode and transfer all buffered output downstream according to
-// [OrderStderr]. This call implies some careful locking and sequencing to ensure all
-// output ultimately leaves this writer and leaves it in the correct order.
+// [OrderStderr]. This call implies the need for some careful locking and sequencing to
+// ensure all output ultimately leaves this writer and leaves in the correct order.
 type queue struct {
 	commonWriter
 	where destination
@@ -103,8 +103,8 @@ func newQueue(orderStderr bool, limit uint64, out, err writer) (stdout, stderr *
 		cq.state = backgroundNoLimit
 	}
 
-	stdout = &queue{where: toStdout, cq: cq} // Create stdout queue
-	stderr = &queue{where: toStderr, cq: cq} // Create stdout queue
+	stdout = &queue{where: toStdout, cq: cq} // Create stdout writer
+	stderr = &queue{where: toStderr, cq: cq} // and stderr writer
 
 	stdout.setNext(out) // Set downstream writers
 	stderr.setNext(err)
@@ -116,13 +116,16 @@ func newQueue(orderStderr bool, limit uint64, out, err writer) (stdout, stderr *
 // concurrent Write() calls *and* concurrent foreground() calls. Idiomatic use of the
 // mutex isn't possible in this case so we *carefully* manage unlock() calls.
 //
-// While the queue writer supports concurrent access the output results are unpredictable
-// as there is no guarantee as to which of multiple goroutines will wake up from being
-// blocked first, nor which one arrives at the channel blocking call first. Even if
-// blocked exit could be serilized with blocked entry, there is no guarantee what the
-// scheduler will do the moment these goroutines are given control. In short, concurrent
-// access here is more about protecting our data structures rather than suggesting or
-// wanting RunFuncs to call Write() concurrently.
+// While the queue writer supports concurrent access, when doing so the output results are
+// unpredictable as there is no guarantee as to which of multiple goroutine wake first
+// after being blocked, nor which one arrives at the channel blocking call first. Even if
+// blocked exit could be synchronized with blocked entry, there is no guarantee what the
+// scheduler will do the moment these goroutines are given control.
+//
+// In short, while concurrent access to the queue writer is acceptable and safe, the
+// resulting order of output is unpredictable. So, as with concurrent writes to os.Stdout
+// and os.Stderr, the application should not expect much in the way of predictable
+// outcomes.
 func (wtr *queue) Write(p []byte) (n int, err error) {
 	wtr.cq.Lock()
 

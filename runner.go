@@ -10,19 +10,19 @@ type runner struct {
 	rFunc          RunFunc // Function started as a goroutine by Run()
 	outTag, errTag []byte  // Prepended to each output line
 
-	sync.RWMutex          // Protects everything below
+	sync.RWMutex          // Protects everything below here
 	stdout, stderr writer // Immutable "head" supplied to Run()
 	queue          *queue // Remember queue so we can flush() it
 	canClose       bool   // If Wait() has read this runner from completed channel
 }
 
-// newRunner constructs a skeletal *runner with no pipeline.
+// newRunner constructs a skeletal runner with an empty pipeline.
 func newRunner(outTag, errTag string, rFunc RunFunc) *runner {
 	return &runner{outTag: []byte(outTag), errTag: []byte(errTag), rFunc: rFunc}
 }
 
-// The queue pipeline consists of head, queue tagger, tail and Group.stdout/Group.stderr
-// built in reverse order as it's stored as a singly linked list. A queue pipeline starts
+// The Queue Pipeline consists of head, queue tagger, tail and Group.stdout/Group.stderr
+// built in reverse order as it's stored as a singly linked list. A Queue Pipeline starts
 // out in background mode.
 func (rnr *runner) buildQueuePipeline(grp *Group) {
 	var stdout, stderr writer
@@ -51,10 +51,10 @@ func (rnr *runner) buildQueuePipeline(grp *Group) {
 	rnr.stderr = stderr
 }
 
-// The passthru pipeline consists of head, tail and Group.stdout/Group.stderr which
+// The Passthru Pipeline consists of head, tail and Group.stdout/Group.stderr which
 // eliminates all writers with state but still retains concurrency protection for the
-// Group io.Writers. So not strictly a true passthru, but as close as we can get while
-// still protecting Group outputs.
+// Group io.Writers. So, not strictly a fully transparent passthru, but as close as we can
+// get while still protecting Group outputs.
 func (rnr *runner) buildPassthruPipeline(grp *Group) {
 	rnr.stdout = newHead(newTail(grp.stdout, &grp.outputMu))
 	rnr.stderr = newHead(newTail(grp.stderr, &grp.outputMu))
@@ -67,8 +67,9 @@ func (rnr *runner) switchToForeground() {
 	rnr.queue.foreground()
 }
 
-// run the RunFunc and notify completion to [Group.Wait]. This function is the RunFunc
-// goroutine so nothing is stalled by potentially blocking on the completion channel.
+// run the RunFunc and notify completion to [Group.Wait]. This function is called by the
+// RunFunc goroutine so nothing is stalled by potentially blocking on the completion
+// channel.
 func (rnr *runner) run(e *list.Element, completed chan *list.Element) {
 	rnr.rFunc(rnr.stdout, rnr.stderr)
 	completed <- e

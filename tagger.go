@@ -5,9 +5,9 @@ import (
 	"sync"
 )
 
-// tagger is a writer which prepends the tag to each line terminated with "\n" and writes
-// it to the next writer in the pipeline. No data is buffered in this writer, only state
-// information pertaining to tag insertion is tracked.
+// tagger is a writer which prepends the tag string to each line terminated with "\n" and
+// writes it to the next writer in the pipeline. No data is buffered in this writer, only
+// state information pertaining to tag insertion is tracked.
 type tagger struct {
 	mu sync.Mutex
 	commonWriter
@@ -24,8 +24,8 @@ func newTagger(out writer, tag []byte) *tagger {
 
 var nl = []byte{'\n'}
 
-// Write prepends tag to each output line. The tag is prepended as soon as the line is
-// known to exist, even if it does not yet have a trailing \n.
+// Write prepends tag to each output line. The tag is prepended as soon as a non-empty
+// line is known to exist, even if it does not yet have a trailing "\n".
 func (wtr *tagger) Write(p []byte) (n int, err error) {
 	if len(p) == 0 { // Make sure len(lines) > 0
 		return 0, nil
@@ -64,8 +64,8 @@ func (wtr *tagger) Write(p []byte) (n int, err error) {
 	}
 
 	// If the last line is not empty that means it is a line of data without a
-	// trailing "\n". In this case, the tag and line are written and no subsequent tag
-	// is pending.
+	// trailing "\n". In this case the tag and line are written and no subsequent tag
+	// is set as pending.
 	//
 	// If the last line *is* empty, it means that the last line of data had a trailing
 	// "\n" and thus a tag is pending for the next inbound Write() call - if it ever
