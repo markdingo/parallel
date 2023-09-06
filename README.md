@@ -39,8 +39,7 @@ package achieves similar functionality within commands written in go.
 [![Go Report Card](https://goreportcard.com/badge/github.com/markdingo/parallel)](https://goreportcard.com/report/github.com/markdingo/parallel)
 [![Go Reference](https://pkg.go.dev/badge/github.com/markdingo/parallel.svg)](https://pkg.go.dev/github.com/markdingo/parallel)
 
-`parallel` is known to compile and run on go versions 1.17.2 thru 1.21.0 inclusive and
-likely many more versions into the future.
+`parallel` is known to compile and run on go versions 1.20 and beyond.
 
 ## Background
 
@@ -115,10 +114,16 @@ available at [parallel](https://pkg.go.dev/github.com/markdingo/parallel).
 When imported by your program, `github.com/markdingo/parallel` should automatically
 install with `go mod tidy` or `go mod build`.
 
+If not, try running:
+
+```
+go get github.com/markdingo/parallel
+```
+
 Once installed, you can run the package tests with:
 
 ```
- go test github.com/markdingo/parallel
+ go test -v github.com/markdingo/parallel
 ```
 
 as well as display the package documentation with:
