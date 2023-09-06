@@ -2,6 +2,7 @@ package parallel
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 )
 
@@ -56,7 +57,7 @@ func TestConfigSet(t *testing.T) {
 	}
 }
 
-func TestConfigAllowed(t *testing.T) {
+func TestConfigForeground(t *testing.T) {
 	grp, err := NewGroup()
 	if err != nil {
 		t.Fatal("Unexpected error", err)
@@ -79,7 +80,13 @@ func TestConfigAllowed(t *testing.T) {
 	if grp.foregroundAllowed() {
 		t.Error("foregroundAllowed should be false with OrderRunners(false)")
 	}
+}
 
+func TestConfigValidCombos(t *testing.T) {
+	grp, err := NewGroup()
+	if err != nil {
+		t.Fatal("Unexpected error", err)
+	}
 	grp, err = NewGroup(LimitMemoryPerRunner(100), LimitActiveRunners(1))
 	if err != nil {
 		t.Fatal("Unexpected error", err)
@@ -99,33 +106,49 @@ func TestConfigAllowed(t *testing.T) {
 
 // Test illegal config combinations
 func TestConfigConflicts(t *testing.T) {
-	_, err := NewGroup(LimitMemoryPerRunner(100))
-	if err == nil {
-		t.Error("Expected LimitActiveRunners error")
+	type testCase struct {
+		limitMemory  uint64
+		limitRunners uint
+		orderRunners bool
+		orderStderr  bool
+		passthru     bool
+		error        string
 	}
 
-	_, err = NewGroup(LimitMemoryPerRunner(100), OrderRunners(false))
-	if err == nil {
-		t.Error("Expected OrderRunners error")
+	testCases := []testCase{
+		/* 0 */ {0, 0, false, false, false, ""},
+		/* 1 */ {100, 0, false, false, false, "Must set LimitActiveRunners"},
+		/* 2 */ {100, 1, false, false, false, "LimitMemoryPerRunner with OrderRunners"},
+		/* 3 */ {100, 1, true, false, false, ""},
+		/* 4 */ {100, 1, true, true, false, "LimitMemoryPerRunner with OrderStderr"},
+		/* 5 */ {100, 1, false, true, false, "LimitMemoryPerRunner with OrderRunners"},
+		/* 6 */ {100, 1, true, false, true, "LimitMemoryPerRunner with Passthru"},
+		/* 7 */ {100, 1, true, false, true, "LimitMemoryPerRunner with Passthru"},
+		/* 8 */ {0, 0, true, false, true, "OrderRunners with Passthru"},
+		/* 9 */ {0, 0, false, true, true, "OrderStderr with Passthru"},
 	}
 
-	_, err = NewGroup(LimitMemoryPerRunner(100), OrderStderr(true))
-	if err == nil {
-		t.Error("Expected OrderStderr error")
-	}
+	for ix, tc := range testCases {
+		_, err := NewGroup(LimitMemoryPerRunner(tc.limitMemory),
+			LimitActiveRunners(tc.limitRunners),
+			OrderRunners(tc.orderRunners),
+			OrderStderr(tc.orderStderr),
+			Passthru(tc.passthru))
+		if err == nil {
+			if len(tc.error) != 0 {
+				t.Errorf("Case %d: Missing error. Expected '%s'", ix, tc.error)
+			}
+			continue
+		}
 
-	_, err = NewGroup(Passthru(true), LimitMemoryPerRunner(100))
-	if err == nil {
-		t.Error("Expected LimitMemoryPerRunner error")
-	}
+		if len(tc.error) == 0 {
+			t.Errorf("Case %d: Unexpected error '%s'", ix, err.Error())
+			continue
+		}
 
-	_, err = NewGroup(Passthru(true), OrderRunners(true))
-	if err == nil {
-		t.Error("Expected OrderRunners error")
-	}
-
-	_, err = NewGroup(Passthru(true), OrderStderr(true))
-	if err == nil {
-		t.Error("Expected OrderStderr error")
+		if !strings.Contains(err.Error(), tc.error) {
+			t.Errorf("Case %d: Wrong error. Expected '%s', got '%s'",
+				ix, tc.error, err.Error())
+		}
 	}
 }

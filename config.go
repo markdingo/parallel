@@ -68,11 +68,11 @@ func (o option) apply(cfg *config) error {
 	return o(cfg)
 }
 
-// LimitActiveRunners limits the number of “active” (or concurrent) [RunFunc]s running in
-// a separate goroutine within a [Group] to the “max” value. It can be used in
-// conjunction with [LimitMemoryPerRunner] to limit total buffer memory used by the
-// [Group], or set independently when there is a risk that too many RunFuncs could be
-// started concurrently. If set to zero, all RunFuncs run concurrently.
+// LimitActiveRunners limits the number of “active” (or concurrent) RunFuncs running in a
+// separate goroutine within a [Group] to the “max” value. It can be used in conjunction
+// with [LimitMemoryPerRunner] to limit total buffer memory used by the [Group], or set
+// independently when there is a risk that too many RunFuncs could be started
+// concurrently. If set to zero, all RunFuncs run concurrently.
 //
 // A [RunFunc] is considered “active” until it returns, not when the output is sent to the
 // Group io.Writers.
@@ -252,10 +252,10 @@ func (cfg *config) checkConflicts() error {
 			return errors.New("Cannot set LimitMemoryPerRunner with Passthru(true)")
 		}
 		if cfg.orderRunners {
-			return errors.New("Cannot set OrderRunners(true) with Passthru(true)")
+			return errors.New("Cannot set OrderRunners with Passthru(true)")
 		}
 		if cfg.orderStderr {
-			return errors.New("Cannot set OrderStderr(true) with Passthru(true)")
+			return errors.New("Cannot set OrderStderr with Passthru(true)")
 		}
 	}
 
