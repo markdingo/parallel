@@ -54,7 +54,7 @@ type Group struct {
 	// Shared across all runners
 	outputMu sync.Mutex // Serialise access to config.stdout, config.stderr
 	*config
-	completed chan *list.Element // Element is contained in runners LL
+	runnerDone chan *list.Element // Element is contained in runners LL
 }
 
 // NewGroup constructs a [Group] ready for use. A [Group] must be constructed with this
@@ -91,9 +91,9 @@ func NewGroup(opts ...Option) (*Group, error) {
 	}
 
 	grp := &Group{state: groupIsAdding,
-		completed: make(chan *list.Element),
-		config:    cfg,
-		runners:   list.New()}
+		runnerDone: make(chan *list.Element),
+		config:     cfg,
+		runners:    list.New()}
 
 	return grp, nil
 }
@@ -210,7 +210,7 @@ func (grp *Group) buildPipelines() {
 // startRunners feeds RunFuncs to a pool of [LimitActiveRunners] workers. The flow of each
 // *list.Element (a container for each runner) is:
 //
-// startRunners() -> todo chan -> worker() -> RunFunc() -> completed chan -> Wait() -> Remove
+// startRunners() -> todo chan -> worker() -> RunFunc() -> runnerDone chan -> Wait() -> Remove
 //
 // Thus *list.Elements remains valid until processed by [Group.Wait] and removed from the
 // list. This is important as [container/List.Remove] invalidates *list.Element.
@@ -229,7 +229,7 @@ func (grp *Group) startRunners() {
 
 	todo := make(chan *list.Element) // Feeder writes, workers read
 	for ; maxWorkers > 0; maxWorkers-- {
-		go worker(todo, grp.completed)
+		go worker(todo, grp.runnerDone)
 	}
 
 	// Copy runners to a separate container so that the feeder goroutine doesn't need
@@ -253,11 +253,11 @@ func (grp *Group) startRunners() {
 
 // Each worker accepts new work from the todo channel, runs the RunFunc then notifies the
 // completion channel. It exits when the todo channel is closed.
-func worker(todo chan *list.Element, completed chan *list.Element) {
+func worker(todo chan *list.Element, runnerDone chan *list.Element) {
 	for e := range todo {
 		rnr := e.Value.(*runner)
 		rnr.rFunc(rnr.stdout, rnr.stderr)
-		completed <- e
+		runnerDone <- e
 	}
 }
 
@@ -268,7 +268,7 @@ func (grp *Group) Wait() {
 	grp.state = groupIsWaiting
 
 	defer func() {
-		close(grp.completed)
+		close(grp.runnerDone)
 		grp.state = groupIsDone
 	}()
 
@@ -281,7 +281,7 @@ func (grp *Group) Wait() {
 	// Element.Next(); instead it relies on List.Front.
 
 	for grp.runners.Len() > 0 { // Iterate until all runners have been removed
-		e := <-grp.completed // Wait for completion
+		e := <-grp.runnerDone // Wait for completion
 		rnr := e.Value.(*runner)
 		rnr.canClose = true // Mark as eligible for closing by contiguous scanning
 
