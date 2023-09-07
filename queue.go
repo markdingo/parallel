@@ -180,6 +180,7 @@ func (cq *commonQueue) len() (outLen, errLen int) {
 
 func (wtr *queue) close() {
 	wtr.foreground()
+	wtr.out.close() // Pass it on
 }
 
 // Switch writer to foreground. That means draining the chunkBuffer. foreground is
