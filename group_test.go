@@ -256,47 +256,90 @@ func TestGroupSeparators(t *testing.T) {
 	}
 }
 
-type testQuotaRunner struct {
+type testMemoryRunner struct {
 	id      int
 	howMany int
 	line    string
+	start   chan any
+	done    chan any
 }
 
-func (tqr *testQuotaRunner) run(stdout, stderr io.Writer) {
-	var bytesWritten int
+func (tqr *testMemoryRunner) run(stdout, stderr io.Writer) {
+	<-tqr.start
 	for tqrCount := 0; tqrCount < tqr.howMany; tqrCount++ {
 		n, _ := stdout.Write([]byte(tqr.line))
-		bytesWritten += n
 		testTBWritten.Add(int32(n))
-		time.Sleep(time.Millisecond * 100)
 	}
+	tqr.done <- true
+	tqr.done <- true
 }
 
 var testTBWritten atomic.Int32
 
+// Most errors are treated as fatal because there is channel synchronization used to
+// progress runners and once there is an error, the state of the channels is unknown and
+// thus further results are likely unpredictable anyway.
 func TestGroupLimitMemoryPerRunner(t *testing.T) {
+	const limit = 100
 	var stdout, stderr bytes.Buffer
 	grp, err := NewGroup(WithStdout(&stdout), WithStderr(&stderr),
-		OrderRunners(true), OrderStderr(false), Passthru(false),
-		LimitMemoryPerRunner(100), LimitActiveRunners(2))
-
+		OrderRunners(true), LimitMemoryPerRunner(limit), LimitActiveRunners(2))
 	if err != nil {
 		t.Fatal("Did not expect NewGroup error", err)
 	}
 
-	if grp.limitMemory == 0 {
-		t.Fatal("Quota should not have been disabled")
+	if grp.limitMemory != limit {
+		t.Fatal("Memory limit should have be set to", limit, "not", grp.limitMemory)
 	}
 
-	tqr1 := &testQuotaRunner{id: 0, howMany: 10, line: "19 bytes + NLxxxxxx\n"} // 200 bytes
-	tqr2 := &testQuotaRunner{id: 1, howMany: 20, line: "19 bytes + NLyyyyyy\n"} // 400 bytes
-	tqr3 := &testQuotaRunner{id: 2, howMany: 30, line: "19 bytes + NLzzzzzz\n"} // 600 bytes
-	grp.Add("one\t", "", tqr1.run)
-	grp.Add("two\t", "", tqr2.run)
-	grp.Add("thr\t", "", tqr3.run)
+	tqr1 := &testMemoryRunner{id: 1, howMany: 10, line: "19 bytes + NLxxxxxx\n",
+		start: make(chan any), done: make(chan any)} // 200 bytes
+	tqr2 := &testMemoryRunner{id: 2, howMany: 20, line: "19 bytes + NLyyyyyy\n",
+		start: make(chan any), done: make(chan any)} // 400 bytes
+	grp.Add("one\t", "", tqr1.run) // Tags should impact memory limits
+	grp.Add("two\t", "", tqr2.run) // as they are applied *after* queue writer
 	grp.Run()
-	grp.Wait()
-	// XXXX What does this test actually do?
+
+	go grp.Wait() // Need to have Wait() running to progress runners
+	tqr1.start <- true // Release tqr1
+	<-tqr1.done        // wait until it's done
+
+	// Since tqr1 should be in fg, no memory limits apply and thus it can write as
+	// much as it wants beyond the limit value.
+
+	tb := int(testTBWritten.Load())
+	if tb != tqr1.howMany*len(tqr1.line) {
+		t.Fatal("Foreground Runner should have successfully written to stdout")
+	}
+
+	// At this stage, as far as parallel is concerned, tqr1 is still running, so tqr2
+	// cannot be switched to fg, ergo, memory limits will apply to tqr2
+	tqr2.start <- true // Release tqr2
+
+	// Wait for tb to stop changing which implies that tqr2 has stopped writing due to
+	// reaching memory limits.
+	firstTB := tb
+	lastTB := tb
+	for ix := 0; ix < 10; ix++ {
+		time.Sleep(time.Millisecond * 100)
+		tb = int(testTBWritten.Load())
+		if tb == lastTB {
+			break
+		}
+		lastTB = tb
+	}
+
+	if lastTB != firstTB+limit {
+		t.Fatal("Expected tqr2 to write", firstTB+limit, "not", lastTB)
+	}
+
+	// Releasing tqr1 should switch tqr2 to foreground so it should complete
+	<-tqr1.done
+	time.Sleep(time.Millisecond * 200)
+	tb = int(testTBWritten.Load())
+	if tb == lastTB {
+		t.Error("tqr2 stalled")
+	}
 }
 
 func TestGroupErrors(t *testing.T) {
