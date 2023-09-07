@@ -256,8 +256,7 @@ func (grp *Group) startRunners() {
 func worker(todo chan *list.Element, runnerDone chan *list.Element) {
 	for e := range todo {
 		rnr := e.Value.(*runner)
-		rnr.rFunc(rnr.stdout, rnr.stderr)
-		runnerDone <- e
+		rnr.run(e, runnerDone)
 	}
 }
 
