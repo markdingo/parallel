@@ -298,3 +298,14 @@ func TestGroupLimitMemoryPerRunner(t *testing.T) {
 	grp.Wait()
 	// XXXX What does this test actually do?
 }
+
+func TestGroupErrors(t *testing.T) {
+	_, err := NewGroup(WithStdout(nil))
+	if err == nil {
+		t.Error("Expected error return from WithStdout(nil)")
+	}
+	_, err = NewGroup(WithStderr(nil))
+	if err == nil {
+		t.Error("Expected error return from WithStderr(nil)")
+	}
+}

@@ -2,6 +2,7 @@ package parallel
 
 import (
 	"bytes"
+	"os"
 	"strings"
 	"testing"
 )
@@ -150,5 +151,26 @@ func TestConfigConflicts(t *testing.T) {
 			t.Errorf("Case %d: Wrong error. Expected '%s', got '%s'",
 				ix, tc.error, err.Error())
 		}
+	}
+}
+
+func TestConfigNilWriters(t *testing.T) {
+	cfg := &config{}
+	err := WithStdout(os.Stdout).apply(cfg)
+	if err != nil {
+		t.Error("Unexpected error setting WithStdout", err)
+	}
+	err = WithStderr(os.Stderr).apply(cfg)
+	if err != nil {
+		t.Error("Unexpected error setting WithStderr", err)
+	}
+
+	err = WithStdout(nil).apply(cfg)
+	if err == nil {
+		t.Error("Expected error setting WithStdout(nil)")
+	}
+	err = WithStderr(nil).apply(cfg)
+	if err == nil {
+		t.Error("Expected error setting WithStderr(nil)", err)
 	}
 }

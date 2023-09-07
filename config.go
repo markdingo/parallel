@@ -184,6 +184,9 @@ func Passthru(setting bool) Option {
 // default of [os.Stderr].
 func WithStderr(wtr io.Writer) Option {
 	f := func(cfg *config) error {
+		if wtr == nil {
+			return errors.New("Cannot supply nil io.Writer to WithStderr")
+		}
 		cfg.stderr = wtr
 
 		return nil // No error possible
@@ -210,6 +213,10 @@ func WithStderrSeparator(sep string) Option {
 // default of os.Stdout.
 func WithStdout(wtr io.Writer) Option {
 	f := func(cfg *config) error {
+		if wtr == nil {
+			return errors.New("Cannot supply nil io.Writer to WithStdout")
+		}
+
 		cfg.stdout = wtr
 
 		return nil // No error possible
