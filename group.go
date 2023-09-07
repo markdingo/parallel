@@ -263,6 +263,13 @@ func worker(todo chan *list.Element, runnerDone chan *list.Element) {
 
 // Wait waits for all RunFuncs started by [Group.Run] to complete before returning. If any
 // RunFunc fails to complete, Wait will never return.
+//
+// While [Group.Run] starts all RunFuncs, it is Wait which progresses RunFuncs and
+// transitions them from background mode to foreground mode to completion, so it's
+// important that the caller not presume that RunFuncs will complete prior to calling
+// Wait, because they wont. If callers want to perform other activities between calls to
+// [Group.Run] and Wait, they may want to consider running Wait in a separate goroutine
+// which notifies them when Wait returns.
 func (grp *Group) Wait() {
 	grp.checkState(groupIsRunning)
 	grp.state = groupIsWaiting
