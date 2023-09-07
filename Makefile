@@ -4,6 +4,9 @@
 
 all:
 	@echo Valid targets are: '"vet"', '"fmt"', '"test"' and '"testrace"'
+	@echo There is also a Makefile in the _examples sub-directory
+	@echo
+
 .PHONY: vet
 vet:
 	go vet ./...

@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// Test that runner builds the correct pipeline based on config settings
 func TestRunnerBuildQueue(t *testing.T) {
 	grp, err := NewGroup()
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"testing"
 )
 
+// Test that an unconfigured tagger writer does not modify the data stream
 func TestTaggerEmpty(t *testing.T) {
 	var buf testBufWriter
 	wtr := newTagger(&buf, []byte{})
@@ -23,7 +24,7 @@ func TestTaggerEmpty(t *testing.T) {
 	}
 }
 
-// No partial line writes, etc
+// Test tagger prepend logic with a whole line data
 func TestTaggerSimple(t *testing.T) {
 	var buf testBufWriter
 	wtr := newTagger(&buf, []byte("host1: "))
@@ -44,6 +45,7 @@ func TestTaggerSimple(t *testing.T) {
 	}
 }
 
+// Test tagger prepend logic with no trailing newline
 func TestTaggerNoTrailingNL(t *testing.T) {
 	var buf testBufWriter
 	wtr := newTagger(&buf, []byte("host1: "))
@@ -64,6 +66,7 @@ func TestTaggerNoTrailingNL(t *testing.T) {
 	}
 }
 
+// Test tagger prepend logic with partial lines
 func TestTaggerPartialWrites(t *testing.T) {
 	var buf testBufWriter
 	wtr := newTagger(&buf, []byte("host1: "))
@@ -86,6 +89,7 @@ func TestTaggerPartialWrites(t *testing.T) {
 	}
 }
 
+// Test tagger with zero-length writes
 func TestTaggerWriteZero(t *testing.T) {
 	var buf testBufWriter
 	wtr := newTagger(&buf, []byte("host1: "))

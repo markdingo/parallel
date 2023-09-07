@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Test that the queue writer does indeed queue all data as stored as written
 func TestQueueBackground(t *testing.T) {
 	var outBuf, errBuf testBufWriter
 	outQ, errQ := newQueue(false, 100, &outBuf, &errBuf)
@@ -51,6 +52,7 @@ func TestQueueBackground(t *testing.T) {
 	}
 }
 
+// Test that writes to both output streams is stored in stream order
 func TestQueueOrderStderr(t *testing.T) {
 	ob := &testBufWriter{}
 	outQ, errQ := newQueue(false, 0, ob, ob)
@@ -94,6 +96,7 @@ func (c *tqbClient) run() {
 	}
 }
 
+// Test that queue blocks on Write() once limits have been reached
 func TestQueueBlock(t *testing.T) {
 	ob := &testBufWriter{}
 	eb := &testBufWriter{}

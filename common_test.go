@@ -33,7 +33,7 @@ func (tbw *testBufWriter) Len() int {
 	return tbw.buf.Len()
 }
 
-// A Writer which can be configured to return a truncated Write()
+// A Writer which can be configured to return a truncated Write() and/or an error.
 type testTruncateWriter struct {
 	len int
 	err error
