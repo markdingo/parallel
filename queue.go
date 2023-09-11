@@ -223,10 +223,12 @@ type chunkBuffer struct {
 // write appends the supplied bytes to the chunkBuffer. It is normally called as a
 // consequence of a writer receiving a Write() call. Write copies the underlying data as
 // it is needed long after control returns to the caller who might otherwise assume that
-// the data is no longer needed or immutable.
+// the data is no longer needed or immutable. This is also needed as the parent caller is
+// Write() and the io.Writer documentation clearly states that "Implementations must not
+// retain p".
 func (buf *chunkBuffer) write(where destination, p []byte) (n int, err error) {
 	b := chunk{where: where, data: make([]byte, len(p))}
-	copy(b.data, p)
+	copy(b.data, p) // Do not retain p
 	buf.chunks = append(buf.chunks, b)
 
 	return len(p), nil
