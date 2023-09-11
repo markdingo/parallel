@@ -169,7 +169,7 @@ func OrderStderr(setting bool) Option {
 // part in managing the output stream.
 //
 // If this option is set true the following options cannot be set true:
-// LimitMemoryPerRunner, OrderStderr and OrderRunners.
+// [LimitMemoryPerRunner], [OrderStderr] and [OrderRunners].
 func Passthru(setting bool) Option {
 	f := func(cfg *config) error {
 		cfg.passthru = setting
