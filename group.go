@@ -67,7 +67,7 @@ type Group struct {
 // StderrLast(false) which results in RunFuncs optimally writing to the Group output
 // io.Writers (which in turn are normally [os.Stdout] and [os.Stderr]).
 //
-// NewGroup copies [os.Stdout] and [os.Stderr] to [Group] [io.Writers] for the purposes of
+// NewGroup copies [os.Stdout] and [os.Stderr] to [Group] [io.Writers] for the purpose of
 // writing the serialised output thus any subseqent changes to [os.Stdout] and [os.Stderr]
 // have no impact on Group output.
 //
