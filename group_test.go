@@ -300,7 +300,7 @@ func TestGroupLimitMemoryPerRunner(t *testing.T) {
 	grp.Add("two\t", "", tqr2.run) // as they are applied *after* queue writer
 	grp.Run()
 
-	go grp.Wait() // Need to have Wait() running to progress runners
+	go grp.Wait()      // Need to have Wait() running to progress runners
 	tqr1.start <- true // Release tqr1
 	<-tqr1.done        // wait until it's done
 
