@@ -13,19 +13,6 @@ const (
 	toStderr
 )
 
-func (d destination) String() string {
-	switch d {
-	case toNowhere:
-		return "toNowhere"
-	case toStdout:
-		return "toStdout"
-	case toStderr:
-		return "toStderr"
-	}
-
-	return "??destination"
-}
-
 type queueState int
 
 const (
@@ -234,7 +221,7 @@ func (buf *chunkBuffer) write(where destination, p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-// Transfer all chunks to downstream writers then release chunks to the GC.
+// Transfer all chunks to downstream writers in configured order
 func (buf *chunkBuffer) drain(orderStderr bool, out, err io.Writer) {
 	if orderStderr {
 		buf.transfer(out, nil)
@@ -245,28 +232,34 @@ func (buf *chunkBuffer) drain(orderStderr bool, out, err io.Writer) {
 	buf.chunks = []chunk{} // Release to GC and empty slice
 }
 
-// transfer all chunks to the downstream writers - if present. Caller is responsible for
-// clearing the chunks so that they are not written more than once. If a downstream Write
-// fails the transfer stops and the error is returned. As it stands, current callers
-// ignore i/o errors as there is no mechanism to pass these errors back to Write() caller
-// as they are long gone.
-func (buf *chunkBuffer) transfer(out, err io.Writer) error {
+// transfer all chunks to the downstream writers if present. Caller is responsible for
+// clearing the chunks so that they are not written more than once. If a downstream
+// Write() fails the transfer stops for that io.Writer and that error is returned if it is
+// the first error detected. As it stands, current callers ignore the returned error as
+// there is no mechanism to pass it back on up to the application due to this function
+// being called asynchronously (typically by parallel.Wait()).
+func (buf *chunkBuffer) transfer(stdout, stderr io.Writer) (err error) {
 	for _, b := range buf.chunks {
-		if b.where == toStdout && out != nil {
-			_, e := out.Write(b.data)
+		switch {
+		case b.where == toStdout && stdout != nil:
+			_, e := stdout.Write(b.data)
 			if e != nil {
-				return e
+				if err == nil { // First error detected?
+					err = e
+				}
+				stdout = nil // Do not write to this io.Writer any more
 			}
-			continue
-		}
-		if b.where == toStderr && err != nil {
-			_, e := err.Write(b.data)
+
+		case b.where == toStderr && stderr != nil:
+			_, e := stderr.Write(b.data)
 			if e != nil {
-				return e
+				if err == nil { // First error detected?
+					err = e
+				}
+				stderr = nil // Do not write to this io.Writer any more
 			}
-			continue
 		}
 	}
 
-	return nil
+	return
 }
