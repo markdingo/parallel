@@ -33,12 +33,66 @@ func (tbw *testBufWriter) Len() int {
 	return tbw.buf.Len()
 }
 
-// A Writer which can be configured to return a truncated Write() and/or an error.
-type testTruncateWriter struct {
-	len int
-	err error
+type testTTWresult struct {
+	desc string
+	len  int // 0: return 0, -1: return len(p), otherwise use len
+	err  error
 }
 
+// A Writer which can be configured to return a truncated Write() and/or an error. Each
+// call to Write pops a result off the stack and returns the results. If the stack is
+// empty the Write returns success. All successful writes are stored in buf.
+type testTruncateWriter struct {
+	index   int
+	results []testTTWresult
+	buf     bytes.Buffer
+}
+
+func (ttw *testTruncateWriter) String() string {
+	return ttw.buf.String()
+}
+
+// Place this result at the bottom of the stack
+func (ttw *testTruncateWriter) append(desc string, len int, err error) {
+	ttw.results = append(ttw.results, testTTWresult{desc, len, err})
+}
+
+// Pop the next results and return them to caller. A zero length returns zero, a positive
+// length means return that value and -1 means return the length of the slice.
 func (ttw *testTruncateWriter) Write(p []byte) (n int, err error) {
-	return ttw.len, ttw.err
+	ttw.index++
+	if len(ttw.results) == 0 { // If stack is empty, return complete success
+		return ttw.buf.Write(p)
+	}
+
+	r := ttw.results[0] // Pop off stack
+	ttw.results = ttw.results[1:]
+	err = r.err
+	switch r.len {
+	case 0:
+		n = 0
+	case -1:
+		n = len(p)
+	default:
+		n = r.len
+		if n > len(p) {
+			n = len(p)
+		}
+	}
+
+	if n > 0 {
+		ttw.buf.Write(p[:n])
+	}
+
+	return
+}
+
+func (ttw *testTruncateWriter) close() {
+}
+
+func (ttw *testTruncateWriter) getNext() writer {
+	return nil
+}
+
+func (ttw *testTruncateWriter) setNext(w writer) {
 }

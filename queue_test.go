@@ -1,6 +1,7 @@
 package parallel
 
 import (
+	"errors"
 	"testing"
 	"time"
 )
@@ -148,4 +149,56 @@ func TestQueueBlock(t *testing.T) {
 	}
 	outQ.close()
 	errQ.close()
+}
+
+// First error should be returned and all subsequent errors ignored. Once a write fails,
+// no further writes to the io.Writer should occur.
+func TestQueueTransferOut(t *testing.T) {
+	ob := &testTruncateWriter{}
+	eb := &testTruncateWriter{}
+	outQ, errQ := newQueue(false, 0, ob, eb)
+	outQ.Write([]byte{'a', 'b', 'c', '\n'})
+	outQ.Write([]byte{'x', 'y', 'z', '\n'})
+	errQ.Write([]byte{'A', 'B', 'C', '\n'})
+	errQ.Write([]byte{'X', 'Y', 'Z', '\n'})
+	ob.append("stdout Write Fail", 1, errors.New("Stdout write failed"))
+	eb.append("stderr should not be visible", 2, errors.New("Stderr write Failed"))
+	e := outQ.cq.buf.transfer(ob, eb)
+	if e == nil {
+		t.Error("Expected error return from transfer")
+	}
+	res := ob.String()
+	if res != "a" { // Should be one byte
+		t.Error("Expected stdout to be 'a', not", res)
+	}
+	res = eb.String()
+	if res != "AB" { // Should be two bytes
+		t.Error("Expected stderr to be 'AB', not", res)
+	}
+}
+
+// All of stdout should be written, but stderr should be truncated and return an error.
+func TestQueueTransferErr(t *testing.T) {
+	ob := &testTruncateWriter{}
+	eb := &testTruncateWriter{}
+	outQ, errQ := newQueue(false, 0, ob, eb)
+	outQ.Write([]byte{'a'})
+	outQ.Write([]byte{'b'})
+	outQ.Write([]byte{'c'})
+	outQ.Write([]byte{'d'})
+	errQ.Write([]byte{'A', 'B', 'C', '\n'})
+	errQ.Write([]byte{'X', 'Y', 'Z', '\n'})
+	eb.append("stderr Write Fail", 3, errors.New("Stderr write failed"))
+	e := outQ.cq.buf.transfer(ob, eb)
+	if e == nil {
+		t.Error("Expected error return from transfer")
+	}
+	res := ob.String()
+	if res != "abcd" { // Should be one byte
+		t.Error("Expected stdout to be 'abcd', not", res)
+	}
+	res = eb.String()
+	if res != "ABC" { // Should be three bytes
+		t.Error("Expected stderr to be 'ABC', not", res)
+	}
 }
