@@ -26,65 +26,78 @@ var nl = []byte{'\n'}
 
 // Write prepends tag to each output line. The tag is prepended as soon as a non-empty
 // line is known to exist, even if it does not yet have a trailing "\n".
+//
+// The returned byte count is complicated. First off, io.Writer.Write makes it clear that
+// this value is valid even when err != nil. That's kinda unusual for a go API. Second
+// off, tagger occassionally writes more bytes than it's given by virtue of having to
+// write the tag data, but we still want to maintain the illusion that tagger is merely
+// writing what the caller provides.
+//
+// Finally, tagger functionality implies that one inbound Write() can result in multiple
+// outbound Write() calls so multiple error returns from the outbound Write() are possible
+// and need to be coalesced. Our chosen solution is to return the first error as
+// subsequent errors may have masked the initial error.
+//
+// Thus, all in all, error returns are a bit hit and miss and the caller really can't
+// assume much about anything, but we do what we can to make the return values as useful
+// as possible.
 func (wtr *tagger) Write(p []byte) (n int, err error) {
 	if len(p) == 0 { // Make sure len(lines) > 0
-		return 0, nil
+		return 0, nil // W0: Zero len data
 	}
 
-	if len(wtr.tag) == 0 { // Do nothing if there's no tag
-		return wtr.out.Write(p)
+	if len(wtr.tag) == 0 { // Pass straight thru if there's no tag
+		return wtr.out.Write(p) // W1: Passthru
 	}
 
-	wtr.mu.Lock() // Protect our tagPending state
+	wtr.mu.Lock() // Protect our local writer state
 	defer wtr.mu.Unlock()
 
 	lines := bytes.Split(p, nl)
 	for ix := 0; ix < len(lines)-1; ix++ { // Process allbut the last line
 		if wtr.tagPending {
-			_, e := wtr.out.Write(wtr.tag)
-			if e != nil && err == nil { // First error is returned
+			_, e := wtr.out.Write(wtr.tag) // W2: Bytes not returned for tag
+			if e != nil && err == nil {    // but first error is always returned
 				err = e
 			}
 		}
-		wtr.tagPending = true
-		ln := lines[ix]
-		b, e := wtr.out.Write(ln)
-		if e != nil && err == nil { // First error is returned
-			err = e
-		} else { // Otherwise accumulate input bytes written
-			n += b
-		}
+		wtr.tagPending = true // Always true for second and subsequent lines
 
-		_, e = wtr.out.Write(nl)
-		if e != nil && err == nil { // First error is returned
+		ln := lines[ix]
+		b, e := wtr.out.Write(ln)   // W3: Line of data
+		if e != nil && err == nil { // First error is always returned
 			err = e
-		} else { // Otherwise accumulate input bytes written
-			n++
 		}
+		n += b // Bytes written is always returned for user data
+
+		b, e = wtr.out.Write(nl)    // W4: NL
+		if e != nil && err == nil { // First error is always returned
+			err = e
+		}
+		n += b // Bytes written is always returned for user data
 	}
 
 	// If the last line is not empty that means it is a line of data without a
-	// trailing "\n". In this case the tag and line are written and no subsequent tag
-	// is set as pending.
+	// trailing "\n" due to bytes.Split(). In this case the tag and line are written
+	// and tagPending is set false.
 	//
 	// If the last line *is* empty, it means that the last line of data had a trailing
-	// "\n" and thus a tag is pending for the next inbound Write() call - if it ever
+	// "\n" and thus tagPending is set for the next inbound Write() call - if it ever
 	// comes.
 
 	ln := lines[len(lines)-1]
-	if len(ln) > 0 {
+	if len(ln) > 0 { // If last line is not empty
 		if wtr.tagPending {
-			_, e := wtr.out.Write(wtr.tag)
-			if e != nil && err == nil { // First error is returned
+			_, e := wtr.out.Write(wtr.tag) // W5: Bytes not returned for tag
+			if e != nil && err == nil {    // but first error is always returned
 				err = e
 			}
 		}
-		b, e := wtr.out.Write(ln)
+		b, e := wtr.out.Write(ln)   // W6: Line of data
 		if e != nil && err == nil { // First error is returned
 			err = e
-		} else { // Otherwise accumulate input bytes written
-			n += b
 		}
+		n += b // Bytes written is always returned for user data
 		wtr.tagPending = false
 	} else {
 		wtr.tagPending = true
