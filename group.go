@@ -106,10 +106,10 @@ func NewGroup(opts ...Option) (*Group, error) {
 // to bypass this package (debug output being a possible example).
 //
 // Naturally each RunFunc instance should avoid interacting with other RunFunc instances
-// unless suitable concurrency controls are used. This advice is mentioned because cli
-// programs adopting this package may not have had to worry about concurrency previously
-// but may have to do so now. For example, unprotected modification of global variables is
-// not uncommon in serial cli programs.
+// unless suitable concurrency controls are used. This advice is mentioned because
+// command-line programs adopting this package may not have had to worry about concurrency
+// previously but may have to do so now. For example, unprotected modification of global
+// variables is not uncommon in serial command-line programs.
 //
 // A RunFunc is free to create internal goroutines and concurrently write to the provided
 // io.Writers... But all such goroutines must complete all writing before RunFunc returns
