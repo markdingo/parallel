@@ -42,7 +42,8 @@ func (gs groupState) String() string {
 // from this call sequence results in a panic.
 //
 // A Group cannot be reused, however multiple Groups can be created and used independently
-// of each other.
+// of each other or in fact nested. There is nothing stopping a [RunFunc] from creating a
+// Group of its own and running multiple RunFuncs within that Group.
 //
 // A Group is not concurrency-safe and must only be accessed by a single goroutine at a
 // time. This does not imply anything about the concurrency of RunFuncs which normally are
