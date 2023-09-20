@@ -13,6 +13,13 @@ so is via the Makefile with `make demos`.
 demo1 visually shows how RunFuncs are stalled when they exceed their memory limits and
 also how they exhibit "liveliness" when they transition to foreground mode.
 
+### nested
+
+nested demonstrates how a program can use multiple Groups by nesting them in a recursive
+function and showing that the output of nested Groups still presents to stdout in serial
+order.
+
+
 ### para
 
 para is a vastly simplified version of the GNU parallel command. It has *just* enough
