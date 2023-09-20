@@ -27,7 +27,7 @@ demo1:
 
 shademo: sha256sum
 	@echo
-	@echo Run sha256sum in parallel with Active=6
+	@echo Run sha256sum in parallel with -l approximating CPU/Core count
 	time ./sha256sum  -l 8 -r 800000 *.go ../*.go
 	@echo
 	@echo Run sha256sum serially.
