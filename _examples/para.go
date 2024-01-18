@@ -109,13 +109,13 @@ func main() {
 	// runCommand()
 
 	for _, a := range args {
-		fArg := a
+		a := a // Pre 1.22 semantics
 		gt := ""
 		if opts.tag {
 			gt = a + "\t"
 		}
 		grp.Add(gt, gt, func(out, err io.Writer) {
-			cmd := append(opts.command, fArg)
+			cmd := append(opts.command, a)
 			runCommand(cmd, out, err)
 		})
 	}

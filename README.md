@@ -89,10 +89,10 @@ replacement code will look something like this:
 group := parallel.NewGroup()
 
 for _, arg := range os.Args {
-    argCopy := arg                                      // (pre go 1.21.1 semantics)
+    arg := arg                                      // (pre go 1.22 semantics)
     group.Add("", "",
-              func(stdout, stderr io.Writer) {          // Use a Closure function
-                  handleArg(argCopy, stdout, stderr)    // Dispatch to handler
+              func(stdout, stderr io.Writer) {      // Use a Closure function
+                  handleArg(arg, stdout, stderr)    // Dispatch to handler
               })
 }
 
