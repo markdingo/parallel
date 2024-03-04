@@ -169,7 +169,7 @@ func (grp *Group) Add(outTag, errTag string, rFunc RunFunc) {
 	grp.runners.PushBack(rnr)
 }
 
-// Run starts each previously added [RunFunc] in a separate go routine and transitions the
+// Run starts each previously added [RunFunc] in a separate goroutine and transitions the
 // Group to being ready for a [Group.Wait] call.
 //
 // When a RunFunc pipeline percolates to the front of all “active” RunFuncs, it is set to

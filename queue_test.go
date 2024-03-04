@@ -103,7 +103,7 @@ func TestQueueBlock(t *testing.T) {
 	eb := &testBufWriter{}
 	outQ, errQ := newQueue(false, 100, ob, eb)
 
-	outChan := make(chan string, 100) // Allowe plenty of buffer space so parent goroutine
+	outChan := make(chan string, 100) // Allow plenty of buffer space so parent goroutine
 	errChan := make(chan string, 100) // won't stall if tqbClient does
 
 	outClient := &tqbClient{line: outChan, wtr: outQ}
