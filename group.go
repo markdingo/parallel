@@ -62,7 +62,10 @@ type Group struct {
 // function as a "zero" struct causes panics. Multiple Options can be supplied to NewGroup
 // to modify its behaviour e.g.:
 //
-//	group := parallel.NewGroup(WithSeparator("----\n"), OrderStderr(true))
+//	group,_ := parallel.NewGroup(
+//	       parallel.WithStdoutSeparator("----\n"),
+//	       parallel.OrderStderr(true),
+//	)
 //
 // Unless otherwise set the [Group] is returned with OrderRunners(true) and
 // StderrLast(false) which results in RunFuncs optimally writing to the Group output
