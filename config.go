@@ -11,8 +11,11 @@ import (
 // options". This means that Option functions are passed as a list of parameters to
 // NewGroup(), eg:
 //
-//	 group := parallel.NewGroup(WithStdoutSeparator("----\n"),
-//		   OrderStderr(true), OrderRunners(true))
+//	group, _ := parallel.NewGroup(
+//		parallel.WithStdoutSeparator("----\n"),
+//		parallel.OrderStderr(true),
+//		parallel.OrderRunners(true),
+//	)
 //
 // For a really good exposition on functional options, check out Julien Cretel's GopherCon
 // Europe 2023 presentation: https://www.youtube.com/watch?v=5uM6z7RnReE&t=1s
