@@ -97,7 +97,7 @@ func recurs(prefix string, depth, widthIndex int, stdout, stderr io.Writer) {
 
 	grp, _ := parallel.NewGroup(parallel.OrderRunners(opts.keepOrder),
 		parallel.WithStdout(stdout), parallel.WithStderr(stderr))
-	for ix := 0; ix < opts.width; ix++ {
+	for ix := range opts.width {
 		ix := ix // Pre 1.22 semantics
 		grp.Add("", "", func(out, err io.Writer) {
 			recurs(prefix, depth+1, ix, out, err)

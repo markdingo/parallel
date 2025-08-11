@@ -266,7 +266,7 @@ type testMemoryRunner struct {
 
 func (tqr *testMemoryRunner) run(stdout, stderr io.Writer) {
 	<-tqr.start
-	for tqrCount := 0; tqrCount < tqr.howMany; tqrCount++ {
+	for range tqr.howMany {
 		n, _ := stdout.Write([]byte(tqr.line))
 		testTBWritten.Add(int32(n))
 	}
@@ -320,7 +320,7 @@ func TestGroupLimitMemoryPerRunner(t *testing.T) {
 	// reaching memory limits.
 	firstTB := tb
 	lastTB := tb
-	for ix := 0; ix < 10; ix++ {
+	for range 10 {
 		time.Sleep(time.Millisecond * 100)
 		tb = int(testTBWritten.Load())
 		if tb == lastTB {

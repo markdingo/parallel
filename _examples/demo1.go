@@ -38,7 +38,7 @@ type runner struct {
 
 func (rnr *runner) run(stdout, stderr io.Writer) {
 	total := 0
-	for count := 0; count < rnr.howMany; count++ {
+	for count := range rnr.howMany {
 		fmt.Fprintf(os.Stderr, "id:%d Write #%d for %d\n", rnr.id, count, len(rnr.line))
 		n, _ := stdout.Write([]byte(rnr.line))
 		total += n

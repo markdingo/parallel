@@ -54,7 +54,7 @@ func (wtr *tagger) Write(p []byte) (n int, err error) {
 	defer wtr.mu.Unlock()
 
 	lines := bytes.Split(p, nl)
-	for ix := 0; ix < len(lines)-1; ix++ { // Process allbut the last line
+	for ix := range len(lines) - 1 { // Process allbut the last line
 		if wtr.tagPending {
 			_, e := wtr.out.Write(wtr.tag) // W2: Bytes not returned for tag
 			if e != nil && err == nil {    // but first error is always returned
