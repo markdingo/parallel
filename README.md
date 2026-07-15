@@ -138,6 +138,7 @@ as well as display the package documentation with:
 If you have any problems using `parallel` or suggestions on how it can do a better job,
 don't hesitate to create an [issue](https://github.com/markdingo/parallel/issues) on
 the project home page. This package can only improve with your feedback.
+AI-generated contributions are forbidden.
 
 ## Copyright and License
 
